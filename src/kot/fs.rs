@@ -9,9 +9,9 @@
 // Allow the use of kot::fs::Path and kot::fs::PathBuf from std::path::
 pub use std::path::{Path, PathBuf};
 pub use std::collections::HashMap;
+pub use fs_extra::dir;
 
 use std::fs;
-use fs_extra::dir;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -19,32 +19,9 @@ use fs_extra::dir;
 
 // -----------------------------------------------------------------------------
 
-// Creates a backup of configurations that conflict
-// + Backup directory location is specified by CLI --backup-dir
-// TODO: Automatically create backup directory
-// TODO: .kotignore in dotfiles repo to specify files to not install / backup
-// TODO: .kotrc in dotfiles repo or home dir to set backup-dir and install-dir?
-fn backup_config(config_path: & PathBuf, backup_dir: & PathBuf) -> super::io::Result<()> {
-    let mut backup_path = backup_dir.to_owned();
-    backup_path.push(config_path.file_name().unwrap());
-    match config_path.is_dir() {
-        true => {
-            // Copy directory with recursion using fs_extra::dir::move_dir
-            let mut options = dir::CopyOptions::new();
-            options.copy_inside = true;
-            dir::move_dir(config_path, backup_path, &options)
-        },
-        false => {
-            // Copy single configuration file
-            let options = fs_extra::file::CopyOptions::new();
-            fs_extra::file::move_file(config_path, backup_path, &options)
-        },
-    }.expect(&format!("Error: Unable to backup config: {:?}", config_path));
-    Ok(())
-}
-
 // Initialize and return a HashMap<config_dir, config_install_location>
 // Later used to check each install location for conflicts before installing
+// This function does not create or modify any files or directories
 pub fn get_target_paths(args: & super::cli::Cli) -> super::io::Result<HashMap<PathBuf, PathBuf>> {
     let mut config_map = HashMap::new();
 
@@ -59,20 +36,9 @@ pub fn get_target_paths(args: & super::cli::Cli) -> super::io::Result<HashMap<Pa
                 // Create full path to target config file (or directory) by push onto install path
                 config_target.push(entry.file_name());
 
-                // If the target configuration file or directory already exists
-                if config_target.exists() {
-                    // Ask client if they would like to abort given the config collision
-                    let msg = format!("Configuration already exists: {:?}\
-                    \nAbort? Enter y/n or Y/N: ", config_target);
-
-                    // If we abort, exit; If we continue, back up the configs
-                    match super::io::prompt(msg) {
-                        true => return Err(std::io::Error::from(std::io::ErrorKind::AlreadyExists)),
-                        false => backup_config(&config_target, &args.backup_dir).ok(),
-                    };
-                };
-
                 // If the entry doesn't already exist, insert it into the config_map
+                // Key is full path to source config from dotfiles repo we're installing
+                // Value is desired full path to config at final install location
                 // TODO: If the entry does exist, should there be an exception?
                 config_map.entry(entry.path().to_owned())
                     .or_insert(config_target.to_owned());
@@ -81,8 +47,18 @@ pub fn get_target_paths(args: & super::cli::Cli) -> super::io::Result<HashMap<Pa
                 config_target.pop();
             },
         }
-
     }
-
     Ok(config_map)
 }
+
+pub fn check_collisions(config_map : & HashMap<PathBuf, PathBuf>) -> super::io::Result<Vec<PathBuf>> {
+    let mut config_conflicts = vec![];
+    for (_path, target_config) in config_map.iter() {
+        // If the target configuration file or directory already exists
+        if target_config.exists() {
+            config_conflicts.push(target_config.to_owned());
+        }
+    }
+    Ok(config_conflicts)
+}
+
