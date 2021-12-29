@@ -18,7 +18,7 @@ mod kot;
 
 fn main() -> kot::Result<()> {
     // Call augmented kot::cli::from_args() to parse CLI arguments
-    let args = kot::cli::from_args()?;
+    let args = kot::kcli::from_args()?;
     // At this point all paths exist and have been converted to absolute paths
     println!("args: {:?}\n", args);
 
@@ -34,9 +34,9 @@ fn main() -> kot::Result<()> {
             // If we were forcing a backup and met some error, revert backups to last good state
             // TODO: Isolate this to limit error scope to backup related functions
             if args.force {
-                let mut temp_path : PathBuf = kot::fs::Path::new("/tmp/").to_path_buf();
+                let mut temp_path : PathBuf = kot::kfs::Path::new("/tmp/").to_path_buf();
                 temp_path.push(args.backup_dir.file_name().unwrap());
-                kot::fs::move_dir(&temp_path, &args.backup_dir, None)?;
+                kot::kfs::move_dir(&temp_path, &args.backup_dir, None)?;
             }
         },
         _ => ()

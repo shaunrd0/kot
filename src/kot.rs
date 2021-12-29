@@ -7,11 +7,11 @@
 ##############################################################################*/
 
 use std::path::PathBuf;
-use crate::kot::fs::check_collisions;
+use crate::kot::kfs::check_collisions;
 
-pub mod cli;
-pub mod fs;
-pub mod io;
+pub mod kcli;
+pub mod kfs;
+pub mod kio;
 
 /// Result alias to return result with Error of various types
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -25,10 +25,10 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 /// Creates symbolic links to the configurations we're installing
 // TODO: On error, revert to last good state
 // TODO: User script to execute after installing configs successfully
-pub fn install_configs(args: & cli::Cli) -> Result<()> {
+pub fn install_configs(args: & kcli::Cli) -> Result<()> {
     // Get the configurations and their target installation paths
     // + Checks for conflicts and prompts user to abort or continue
-    let config_map = fs::get_target_paths(&args)?;
+    let config_map = kfs::get_target_paths(&args)?;
 
     // Check if there are any existing files in the install directory that are also within the dotfiles to install
     handle_collisions(&args, &config_map)?;
@@ -57,8 +57,8 @@ pub fn install_configs(args: & cli::Cli) -> Result<()> {
 }
 
 /// Handles collisions between existing files and dotfiles we're installing
-fn handle_collisions(args : & cli::Cli,
-                     config_map : & fs::HashMap<PathBuf, PathBuf>) -> Result<()> {
+fn handle_collisions(args : & kcli::Cli,
+                     config_map : & kfs::HashMap<PathBuf, PathBuf>) -> Result<()> {
     // Check if we found any collisions in the configurations
     match check_collisions(&config_map) {
         None => {
@@ -76,7 +76,7 @@ fn handle_collisions(args : & cli::Cli,
 
             // If we abort, exit; If we continue, back up the configs
             // TODO: Group this in with the --force flag?; Or make a new --adopt flag?
-            match io::prompt(msg) {
+            match kio::prompt(msg) {
                 true => return Ok(()),
                 false => {
                     // Backup each conflicting config at the install location
@@ -96,7 +96,7 @@ fn handle_collisions(args : & cli::Cli,
 // + Backup directory location is specified by CLI --backup-dir
 // TODO: .kotignore in dotfiles repo to specify files to not install / backup
 // TODO: .kotrc in dotfiles repo or home dir to set backup-dir and install-dir?
-fn backup_config(config_path: & fs::PathBuf, args: & cli::Cli) -> Result<()> {
+fn backup_config(config_path: & kfs::PathBuf, args: & kcli::Cli) -> Result<()> {
     let mut backup_path = args.backup_dir.to_owned();
     backup_path.push(config_path.file_name().unwrap());
 
@@ -104,10 +104,10 @@ fn backup_config(config_path: & fs::PathBuf, args: & cli::Cli) -> Result<()> {
     match config_path.is_dir() {
         true => {
             // Copy directory with recursion using move_dir() wrapper function
-            let mut options = fs::dir::CopyOptions::new();
+            let mut options = kfs::dir::CopyOptions::new();
             options.copy_inside = true;
             options.overwrite = args.force;
-            if let Err(e) = fs::move_dir(config_path, &backup_path, Some(&options))
+            if let Err(e) = kfs::move_dir(config_path, &backup_path, Some(&options))
                 .map_err(|e| e.into()) {
                 return Err(e)
             }
@@ -116,7 +116,7 @@ fn backup_config(config_path: & fs::PathBuf, args: & cli::Cli) -> Result<()> {
             // Copy single configuration file
             let mut options = fs_extra::file::CopyOptions::new();
             options.overwrite = args.force;
-            if let Err(e) = fs::move_file(config_path, &backup_path, Some(&options))
+            if let Err(e) = kfs::move_file(config_path, &backup_path, Some(&options))
                 .map_err(|e| e.into()) {
                 return Err(e)
             }

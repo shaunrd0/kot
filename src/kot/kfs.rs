@@ -22,7 +22,7 @@ use std::fs;
 /// Initialize and return a HashMap<config_dir, config_install_location>
 /// + Later used to check each install location for conflicts before installing
 /// + This function does not create or modify any files or directories
-pub fn get_target_paths(args: & super::cli::Cli) -> super::Result<HashMap<PathBuf, PathBuf>> {
+pub fn get_target_paths(args: & super::kcli::Cli) -> super::Result<HashMap<PathBuf, PathBuf>> {
     let mut config_map = HashMap::new();
 
     // Local variable for the installation directory as an absolute path

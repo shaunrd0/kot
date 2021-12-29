@@ -104,7 +104,7 @@ impl Cli {
             let mut temp_path = Path::new("/tmp/").to_path_buf();
             temp_path.push(self.backup_dir.file_name().unwrap());
             // Move the old backups to /tmp/ and create a new empty backup directory
-            super::fs::move_dir( &self.backup_dir, &temp_path, Some(&options))?;
+            super::kfs::move_dir(&self.backup_dir, &temp_path, Some(&options))?;
             std::fs::create_dir_all(&self.backup_dir)?;
         }
 
