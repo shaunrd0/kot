@@ -17,8 +17,8 @@ use std::io;
 
 // -----------------------------------------------------------------------------
 
-// Asks user for y/n Y/N input, returns true/false respectively
-// + Prompt output defined by msg parameter String
+/// Asks user for y/n Y/N input, returns true/false respectively
+/// + Prompt output defined by msg parameter String
 pub fn prompt(msg: String) -> bool {
     println!("{}", msg);
     let mut reply = String::new();

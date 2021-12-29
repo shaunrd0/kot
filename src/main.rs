@@ -6,6 +6,8 @@
 ## Contact: shaunrd0@gmail.com  | URL: www.shaunreed.com | GitHub: shaunrd0   ##
 ##############################################################################*/
 
+use std::path::PathBuf;
+
 mod kot;
 
 // =============================================================================
@@ -14,9 +16,9 @@ mod kot;
 
 // -----------------------------------------------------------------------------
 
-fn main() {
+fn main() -> kot::Result<()> {
     // Call augmented kot::cli::from_args() to parse CLI arguments
-    let args = kot::cli::from_args();
+    let args = kot::cli::from_args()?;
     // At this point all paths exist and have been converted to absolute paths
     println!("args: {:?}\n", args);
 
@@ -26,10 +28,19 @@ fn main() {
             // If there was an error, show the error type and run settings
             println!(
                 "Error: {:?}\n+ Configs used: {:?}\n+ Install directory: {:?}\n",
-                e.kind(), args.dotfiles_dir, args.install_dir
-            )
+                e, args.dotfiles_dir, args.install_dir
+            );
+
+            // If we were forcing a backup and met some error, revert backups to last good state
+            // TODO: Isolate this to limit error scope to backup related functions
+            if args.force {
+                let mut temp_path : PathBuf = kot::fs::Path::new("/tmp/").to_path_buf();
+                temp_path.push(args.backup_dir.file_name().unwrap());
+                kot::fs::move_dir(&temp_path, &args.backup_dir, None)?;
+            }
         },
-        // Configurations installed successfully
-        Ok(()) => (),
+        _ => ()
     }
+    // Configurations installed successfully
+    Ok(())
 }
