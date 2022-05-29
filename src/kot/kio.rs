@@ -6,9 +6,6 @@
 ## Contact: shaunrd0@gmail.com  | URL: www.shaunreed.com | GitHub: shaunrd0   ##
 ##############################################################################*/
 
-// Allow use of kot::io::Result
-pub use std::io::Result;
-
 use std::io;
 
 // =============================================================================
@@ -20,14 +17,14 @@ use std::io;
 /// Asks user for y/n Y/N input, returns true/false respectively
 /// + Prompt output defined by msg parameter String
 pub fn prompt(msg: String) -> bool {
-    println!("{}", msg);
-    let mut reply = String::new();
-    io::stdin().read_line(&mut reply)
-        .expect("Failed to read user input");
-    match reply.trim() {
-        "y" | "Y" => true,
-        "n" | "N" => false,
-        // Handle garbage input
-        _ => prompt("Please enter y/n or Y/N\n".to_owned()),
-    }
+  println!("{}", msg);
+  let mut reply = String::new();
+  io::stdin().read_line(&mut reply)
+      .expect("Failed to read user input");
+  match reply.trim() {
+    "y" | "Y" => true,
+    "n" | "N" => false,
+    // Handle garbage input
+    _ => prompt("Please enter Y/y or N/n\n".to_owned()),
+  }
 }

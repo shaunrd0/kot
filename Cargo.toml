@@ -1,11 +1,13 @@
 [package]
 name = "kot"
-version = "0.1.0"
+version = "0.1.5"
 edition = "2018"
 
 # See more keys and their definitions at
 # https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+regex = "1"
 structopt = "0.3.23"
 fs_extra = "1.2.0"
+chrono = "0.4"
